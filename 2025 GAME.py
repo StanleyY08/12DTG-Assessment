@@ -1,32 +1,32 @@
 import random
 import time
-player_health = 1500
+player_health = 100
 gold = 300
 inventory = ["Shovel"]  # Start with a shovel
 equipped_weapon = "Shovel"  # Start with a shovel equipped
 
 weapons = { # list of the weapons
     "Shovel": 1000,
-    "Sword": 20
+    "Sword": 25,
+    "Hammer": 32
 }
 
+words = ["charge", "peirce", "rush", "blitz","assault", "pounce", "stab", "ambush", "savage", "assault"]# if the user doesn't spell the word in 5 seconds they can't attack
+words_defense = ["sheild", "protect", "block", "guard", "support", "stealth", "camouflage", "hidden", "invisable", "armour"]
+words_heavy = ["hard", "crush", "slam", "smash", "impact", "thunder", "blow", "pound", "strike", "devastate"]
 items = {
     "Health Potion": {"type": "heal", "amount": 30},  # Heals 30 HP
-    "Cure Potion": {"type": "revive", "amount": 50}   # Revives a zombie ally with 50 HP
 }
 
 zombie_stats = [# enemy stats
-    {"name": "evil corridor defender", "health": 30, "weapon": "hands", "damage": random.randint(10, 15)},
-    {"name": "evil senior student", "health": 45, "weapon": "stick", "damage": random.randint(12, 18)},
-    {"name": "evil teacher", "health": 60, "weapon": "enchanted ruler", "damage": random.randint(15, 20)},
-    {"name": "Evil Mr Lessels", "health": 75, "weapon": "Boxing gloves", "damage": random.randint(20, 25)},
-    {"name": "Evil Mr Smith", "health": 75, "weapon": "Boxing gloves", "damage": random.randint(20, 25)},
-    {"name": "Evil Mr Stevenson", "health": 75, "weapon": "Boxing gloves", "damage": random.randint(20, 25)},
-    {"name": "BOSS Mr Hunt", "health": 100, "weapon": "Mind control device", "damage": random.randint(20, 25)}
+        {"name": "evil corridor defender", "health": 30, "weapon": "hands", "damage": random.randint(4, 10)},
+        {"name": "evil senior student", "health": 45, "weapon": "stick", "damage": random.randint(5, 10)},
+        {"name": "evil teacher", "health": 60, "weapon": "enchanted ruler", "damage": random.randint(6, 10)},
+        {"name": "Evil Mr Lessels", "health": 75, "weapon": "Boxing gloves", "damage": random.randint(10, 12)},
+        {"name": "Evil Mr Smith", "health": 75, "weapon": "Boxing gloves", "damage": random.randint(10, 12)},
+        {"name": "Evil Mr Stevenson", "health": 75, "weapon": "Boxing gloves", "damage": random.randint(10, 12)},
+        {"name": "BOSS Mr Hunt", "health": 100, "weapon": "Mind control device", "damage": random.randint(15, 18)}
 ]
-
-
-cured_zombies = []# this will store your zombies
 
 
 def shop():
@@ -34,27 +34,37 @@ def shop():
 
     items = {"Health Potion": 20,# items in the shop
              "Sword": 35,
-             "cure potion": 45}
+             "Hammer": 45}
 
     while True:
         print("\n--- Shop ---")
         print(f"Your gold: {gold}")
-        print("1. Buy Sword (35 gold)")
-        print("2. Buy Health Potion (20 gold)")
-        print("3. Exit")
+        print("1. Buy Sword (25 gold) - deals 25 damage")
+        print("2. Buy Hammer (45 gold) - 20% chance dealing more damgae, deals 40 damage")
+        print("3. Buy Health Potion (20 gold) - heals half of your health")
+        print("4. Exit")
 
         choice = input("Choose an option: ")
 
         if choice == "1":
-            if gold >= 35: # checks if they have enough gold
+            if gold >= 25: # checks if they have enough gold
                 inventory.append("Sword")  # adds the sword to inventory
-                gold -= 35 # removes the gold from them
+                gold -= 25 # removes the gold from them
                 print("Sword added to your inventory.")
             else:
                 print("You can't afford this")
             break # continues
 
         elif choice == "2":
+            if gold >= 45:
+                inventory.append("Hammer")
+                gold -= 45
+                print("Hammer added to your inventory.")
+            else:
+                print("You can't afford this")
+            break
+        
+        elif choice == "3":
             if gold >= 20:
                 inventory.append("Health Potion")
                 gold -= 20
@@ -63,7 +73,7 @@ def shop():
                 print("You can't afford this")
             break
 
-        if choice == "3":
+        if choice == "4":
             print("Goodbye!")
             break
 
@@ -156,10 +166,18 @@ def first_option():
             quit()
         else:
             print("\nInvalid command. Try again.")
-           
+def apply_extra_damage(damage):
+
+    if equipped_weapon == "Hammer":
+        if random.random() < 0.8:  # 20% chance to apply extra damage
+            extra_damage = damage * 0.2  # 20% of the base damage
+            damage += extra_damage  # Add extra damage to the total damage
+            print(f"Your hammer does extra damage! ({extra_damage} added)")
+    return damage
 
 def attack(enemy):
     damage = weapons[equipped_weapon] # creating a varible to use
+    damage = apply_extra_damage(damage)
     enemy["health"] -= damage # the maths of the code
     print(f"\nYou attack the {enemy['name']} with your {equipped_weapon} for {damage} damage!")# prints what you did
 
@@ -168,28 +186,104 @@ def zombie_attack(player_health, enemy):
     player_health -= damage  # Subtract the damage from the player's health
     print(f"\nThe {enemy['name']} attacks you for {damage} damage!")  # Print the zombie's attack
     return player_health
+def heavy_attack(enemy):
 
-def handle_battle(enemy):
+    miss_chance = 0.5  # 50% chance to miss
+    if random.random() < miss_chance:
+        print("You swing your weapon with maximum force but the enemy predicted your attack...")
+        return 0  # No damage if it misses
+    else:
+        damage = weapons[equipped_weapon] * 2  # Double damage for heavy attack
+        damage = apply_extra_damage(damage)
+        enemy["health"] -= damage
+        print(f"You deal {damage} damage to the {enemy['name']} with your heavy attack!")
+        return damage
+def defense(enemy):
     global player_health
-    while enemy["health"] > 0 and player_health > 0:
-        print(f"\n{enemy['name']} Health: {enemy['health']}")
-        print(f"Your health: {player_health}")
-        print("1. Attack")
-        try:
-            command = int(input("> "))
-            if command == 1:
-                attack(enemy)
+    original_damage = enemy["damage"]  # Zombie's original damage
+    absorbed_damage = original_damage * 0.7  # Absorbed 70% of the damage
+    reflected_damage = original_damage * 0.3  # Reflected 30% of the damage
+
+    reflected_damage = apply_extra_damage(reflected_damage)
+    player_health -= absorbed_damage # Player absorbs 70% of the damage
+    
+    enemy["health"] -= reflected_damage# Reflects 30% of the damage to the enemy
+    print(f"You absorb {absorbed_damage:.2f} damage and reflect {reflected_damage:.2f} damage back to the {enemy['name']}!")
+    return player_health
+def handle_battle(enemy):
+    print("You must spell out one of the attacks if spelt incorrectly you wont't be able to attack:")
+    print("Choose Your opition")
+    print("1. Attack")
+    print("2. Defend")
+    print("3. Heavy Attack")
+    
+    try:
+        action = input("> ").lower()
+
+        if action == "attack":  # If the player chooses "attack"
+            if spelling_challenge("attack") == True:  # Call spelling challenge for attack
+                attack(enemy)  # Perform the attack action
                 if enemy["health"] <= 0:
                     print(f"You defeated the {enemy['name']}!")
-                else:
-                    player_health = zombie_attack(player_health, enemy)
-                    if player_health <= 0:
-                        print("You have been defeated by the zombie!")
-                        break
+                    return
             else:
-                print("Invalid option.")
-        except ValueError:
-            print("Please enter a valid number.")
+                print("You failed to perform the attack!")
+                
+        elif action == "defend":  # If the player chooses "defend"
+            if spelling_challenge("defend") == True:  # Call spelling challenge for defend
+                defense(enemy)  # Perform the defend action
+                if enemy["health"] <= 0:
+                    print(f"You defeated the {enemy['name']} by reflecting damage!")
+                    return
+            else:
+                print("You failed to defend!")
+                
+        elif action == "heavy attack":  # If the player chooses "heavy"
+            if spelling_challenge("heavy attack") == True:  # Call spelling challenge for heavy attack
+                heavy_attack(enemy)  # Perform the heavy attack action
+                if enemy["health"] <= 0:
+                    print(f"You defeated the {enemy['name']} with a heavy attack!")
+                    return
+            else:
+                print("You failed to perform the heavy attack!")
+
+        else:
+            print("Invalid action! Choose 'attack', 'defend', or 'heavy'.")
+            handle_battle(enemy)  # Prompt again if invalid input
+
+    except ValueError:
+        print("Please enter a valid input.")
+                    
+def spelling_challenge(action_type):
+    # Choose the correct list based on the action type
+    if action_type == "attack":
+        word_list = words
+    elif action_type == "defend":
+        word_list = words_defense
+    elif action_type == "heavy attack":
+        word_list = words_heavy
+    
+    # Choose a random word from the selected list
+    word = random.choice(word_list)
+
+    print(f"\nYou must spell the following word to {action_type}!")
+    print("Spell the word within 5 seconds to succeed.")
+    print(f"Word: {word}")
+
+    start_time = time.time()  # Record the start time
+    user_input = input("Type the word: ")
+
+    elapsed_time = time.time() - start_time  # Calculate time elapsed
+
+    if elapsed_time > 5:
+        print("\nYou ran out of time! You lose your turn.")
+        return False  # Player failed to spell the word within time limit
+    elif user_input.lower() == word:
+        print(f"\nCorrect! You successfully used {action_type}!")
+        return True  # Player spelled the word correctly
+    else:
+        print("\nIncorrect spelling! You lose your turn.")
+        return False  # Player spelled the word incorrectly
 def story():
     while True:
         print()
@@ -201,11 +295,12 @@ def story():
             if command == 1:
                 tower_block()# makes them go to ... of the game
             elif command == 2:
-                story_road()# makes them go to ... of the game
+                road_explore()# makes them go to ... of the game
             else:
                 print("Invalid option. Try again.")
         except ValueError:
             print("Please enter a number.")
+
 def tower_block():
     zombie_weights = [1, 0, 0, 0, 0, 0, 0]
     enemy = random.choices(zombie_stats, weights=zombie_weights, k=1)[0]
@@ -527,7 +622,30 @@ def top_floor():
 def weird_ending():
     print("You walk into the loud room start partying with the people")
 def road_explore():
-    print("hi")
+    zombie_weights = [1, 0, 0, 0, 0, 0, 0]
+    enemy = random.choices(zombie_stats, weights=zombie_weights, k=1)[0]
+    print(f"As you climb up the first floor of the tower block, you encounter a {enemy['name']}!")
+    handle_battle(enemy)  # Battle logic moved here
+    if player_health > 0:
+        rules2()  # Call to show rules2 options
+        while True:
+            try:
+                command = int(input("> "))
+                if command == 1:
+                    # Continue the game
+                    print("What would you like to do next?")
+                    print("1. Use your key to go inside the loud room")
+                    print("2. go up on top of tower block")
+                    next_choice = int(input("> "))
+                    if next_choice == 1:
+                        weird_ending()
+                    elif next_choice== 2:
+                        top_floor()
+                    else:
+                        print("Invalid choice. Returning to previous options.")
+                        tower_block()
+            except ValueError:
+                print("Please enter a valid number.")
 
 def LOSE_PART():
     print("losing fuinction")
