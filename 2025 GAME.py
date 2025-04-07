@@ -10,13 +10,28 @@ weapons = { # list of the weapons
     "Sword": 25,
     "Hammer": 32
 }
-# top one words for attack second is for defense third is for heavy attack
+# game will be for badminton game
 words = ["charge", "peirce", "rush", "blitz","assault", "pounce", "stab", "ambush", "savage", "assault"]# if the user doesn't spell the word in 5 seconds they can't attack
 words_defense = ["sheild", "protect", "block", "guard", "support", "stealth", "camouflage", "hidden", "invisable", "armour"]
 words_heavy = ["hard", "crush", "slam", "smash", "impact", "thunder", "blow", "pound", "strike", "devastate"]
 items = {
     "Health Potion": {"type": "heal", "amount": 30},  # Heals 30 HP
 }
+
+
+
+#synoyms game list
+synonyms = {
+    "happy": ["joyful", "content", "cheerful", "elated"],
+    "fast": ["quick", "speedy", "rapid", "swift"],
+    "strong": ["powerful", "sturdy", "tough", "robust"],
+    "smart": ["intelligent", "bright", "clever", "sharp"],
+    "brave": ["courageous", "fearless", "valiant", "bold"],
+    "big": ["large", "huge", "gigantic", "massive"],
+    "small": ["tiny", "petite", "minuscule", "little"],
+    "beautiful": ["pretty", "attractive", "lovely", "gorgeous"],
+    "funny": ["humorous", "amusing", "hilarious", "entertaining"]
+    }
 
 zombie_stats = [# enemy stats
         {"name": "Evil corridor defender", "health": 30, "weapon": "hands", "damage": random.randint(4, 10)},
@@ -64,7 +79,7 @@ def shop():
             else:
                 print("You can't afford this")
             break
-        
+       
         elif choice == "3":
             if gold >= 20:
                 inventory.append("Health Potion")
@@ -207,84 +222,88 @@ def defense(enemy):
 
     reflected_damage = apply_extra_damage(reflected_damage)
     player_health -= absorbed_damage # Player absorbs 70% of the damage
-    
+   
     enemy["health"] -= reflected_damage# Reflects 30% of the damage to the enemy
     print(f"You absorb {absorbed_damage:.2f} damage and reflect {reflected_damage:.2f} damage back to the {enemy['name']}!")
     return player_health
 def handle_battle(enemy):
+    global player_health
+    global gold
     print("You must spell out one of the attacks if spelt incorrectly you wont't be able to attack:")
     print("Choose Your opition")
     print("1. Attack")
     print("2. Defend")
     print("3. Heavy Attack")
-    
+  
     try:
         action = input("> ").lower()
 
         if action == "attack":  # If the player chooses "attack"
-            if spelling_challenge("attack") == True:  # Call spelling challenge for attack
+            if synonym_game("attack") == True:  # Call spelling challenge for attack
                 attack(enemy)  # Perform the attack action
                 if enemy["health"] <= 0:
                     print(f"You defeated the {enemy['name']}!")
+                    gold += 10  # Give 5 gold upon winning
+                    print(f"You received 10 gold! Your total gold is now {gold}")
                     return
             else:
-                print("You failed to perform the attack!")
-                
+                player_health = zombie_attack(player_health, enemy) # Directly print the updated player health after damage
+                print(f"Your current health: {player_health}")
+                return handle_battle(enemy)  # Retry the battle
+
+               
         elif action == "defend":  # If the player chooses "defend"
-            if spelling_challenge("defend") == True:  # Call spelling challenge for defend
+            if synonym_game("defend") == True:  # Call spelling challenge for defend
                 defense(enemy)  # Perform the defend action
                 if enemy["health"] <= 0:
                     print(f"You defeated the {enemy['name']} by reflecting damage!")
+                    gold += 10  # Give 5 gold upon winning
+                    print(f"You received 10 gold! Your total gold is now {gold}")
                     return
             else:
-                print("You failed to defend!")
-                
+                player_health = zombie_attack(player_health, enemy) # Directly print the updated player health after damage
+                print(f"Your current health: {player_health}")
+                return handle_battle(enemy)  # Retry the battle
+
+               
         elif action == "heavy attack":  # If the player chooses "heavy"
-            if spelling_challenge("heavy attack") == True:  # Call spelling challenge for heavy attack
+            if synonym_game("heavy attack") == True:  # Call spelling challenge for heavy attack
                 heavy_attack(enemy)  # Perform the heavy attack action
                 if enemy["health"] <= 0:
                     print(f"You defeated the {enemy['name']} with a heavy attack!")
+                    gold += 10  # Give 5 gold upon winning
+                    print(f"You received 10 gold! Your total gold is now {gold}")
                     return
             else:
-                print("You failed to perform the heavy attack!")
+                player_health = zombie_attack(player_health, enemy) # Directly print the updated player health after damage
+                print(f"Your current health: {player_health}")
+                return handle_battle(enemy)  # Retry the battle
+
 
         else:
             print("Invalid action! Choose 'attack', 'defend', or 'heavy'.")
-            handle_battle(enemy)  # Prompt again if invalid input
+            return handle_battle(enemy)  # Prompt again if invalid input
 
     except ValueError:
         print("Please enter a valid input.")
-                    
-def spelling_challenge(action_type):
-    # Choose the correct list based on the action type
-    if action_type == "attack":
-        word_list = words
-    elif action_type == "defend":
-        word_list = words_defense
-    elif action_type == "heavy attack":
-        word_list = words_heavy
-    
-    # Choose a random word from the selected list
-    word = random.choice(word_list)
+                   
 
-    print(f"\nYou must spell the following word to {action_type}!")
-    print("Spell the word within 5 seconds to succeed.")
+def synonym_game(action_type):
+    word, synonym_list = random.choice(list(synonyms.items())) # Randomly select any word from the synonyms dictionary
+    
+    print(f"\nYou must guess a synonym of the word to {action_type}!")
     print(f"Word: {word}")
 
-    start_time = time.time()  # Record the start time
-    user_input = input("Type the word: ")
+    # Player enters their guess
+    guess = input("Enter a synonym: ")
 
-    elapsed_time = time.time() - start_time  # Calculate time elapsed
-
-    if elapsed_time > 5:
-        print("\nYou ran out of time! You lose your turn.")
-        return False  # Player failed to spell the word within time limit
-    elif user_input.lower() == word:
-        print(f"\nCorrect! You successfully used {action_type}!")
-        return True  # Player spelled the word correctly
+    # Check if the player's guess is correct
+    if guess.lower() in synonym_list:
+        print(f"\nCorrect! You successfully performed {action_type}!")
+        return True  # Correct guess
     else:
-        print("\nIncorrect spelling! You lose your turn.")
-        return False  # Player spelled the word incorrectly
+        print("\nIncorrect synonym! You lose your turn.")
+        return False  # Incorrect guess
 def story():
     while True:
         print()
@@ -302,6 +321,7 @@ def story():
         except ValueError:
             print("Please enter a number.")
 
+
 def tower_block():
     zombie_weights = [1, 0, 0, 0, 0, 0, 0, 0]
     enemy = random.choices(zombie_stats, weights=zombie_weights, k=1)[0]
@@ -315,16 +335,24 @@ def tower_block():
                 if command == 1:
                     # Continue the game
                     print("What would you like to do next?")
-                    print("1. explore first floor")
-                    print("2. go up the second floor")
-                    next_choice = int(input("> "))
-                    if next_choice == 1:
-                        explore_first()
-                    elif next_choice== 2:
-                        second()
-                    else:
-                        print("Invalid choice. Returning to previous options.")
-                        tower_block()
+                    print("1. Explore first floor")
+                    print("2. Go up to the second floor")
+                    
+                    while True:  # This loop keeps asking until a valid option is selected
+                        try:
+                            next_choice = int(input("> "))
+                            if next_choice == 1:
+                                explore_first()  # goes to a part of the story
+                                break  # exits if input error
+                            elif next_choice == 2:
+                                second()  # goes to a part of the story
+                                break  # exits if input error
+                            else:
+                                print("Invalid choice. Please choose 1 or 2.")
+                        except ValueError:
+                            print("Please enter a valid number.")
+                else:
+                    print("Invalid command. Please enter 1 to continue.")
             except ValueError:
                 print("Please enter a valid number.")
 def explore_first():
@@ -342,15 +370,24 @@ def explore_first():
                     print("What would you like to do next?")
                     print("1. explore halls")
                     print("2. explore the bridge")
-                    next_choice = int(input("> "))
-                    if next_choice == 1:
-                        explore_halls()
-                    elif next_choice== 2:
-                        explore_bridge()
-                    else:
-                        print("Invalid choice. Returning to previous options.")
+                    while True:
+                        try:
+                            next_choice = int(input("> "))
+                            if next_choice == 1:
+                                explore_halls()
+                                break
+                            elif next_choice== 2:
+                                explore_bridge()
+                                break
+                            else:
+                                print("Invalid choice. Returning to previous options.")
+                        except ValueError:
+                            print("Please enter a valid number.")
+                else:
+                    print("invalid")
             except ValueError:
-                print("Please enter a valid number.")
+                print("Please enter a valid number")
+                
 def explore_halls():
     zombie_weights = [0, 0, 1, 0, 0, 0, 0, 0]
     enemy = random.choices(zombie_stats, weights=zombie_weights, k=1)[0]
@@ -366,15 +403,23 @@ def explore_halls():
                     print("What would you like to do next?")
                     print("1. explore elevator")
                     print("2. explore classes")
-                    next_choice = int(input("> "))
-                    if next_choice == 1:
-                        explore_elevator()
-                    elif next_choice== 2:
-                        explore_class()
-                    else:
-                        print("Invalid choice. Returning to previous options.")
+                    while True:
+                        try:
+                            next_choice = int(input("> "))
+                            if next_choice == 1:
+                                explore_elevator()
+                                break
+                            elif next_choice== 2:
+                                explore_class()
+                                break
+                            else:
+                                print("Invalid choice. Returning to previous options.")
+                        except ValueError:
+                            print("Please enter a valid number.")
+                else:
+                    print("invalid")
             except ValueError:
-                print("Please enter a valid number.")
+                print("Please enter a valid number")
 def explore_bridge():
     zombie_weights = [0, 0, 1, 0, 0, 0, 0, 0]
     enemy = random.choices(zombie_stats, weights=zombie_weights, k=1)[0]
@@ -390,15 +435,23 @@ def explore_bridge():
                     print("What would you like to do next?")
                     print("1. explore 'STAFF ONLY' room")
                     print("2. explore under the bridge")
-                    next_choice = int(input("> "))
-                    if next_choice == 1:
-                        explore_staff()
-                    elif next_choice== 2:
-                        explore_downstairs()
-                    else:
-                        print("Invalid choice. Returning to previous options.")
+                    while True:
+                        try:
+                            next_choice = int(input("> "))
+                            if next_choice == 1:
+                                explore_staff()
+                                break
+                            elif next_choice== 2:
+                                explore_downstairs()
+                                break
+                            else:
+                                print("Invalid choice. Returning to previous options.")
+                        except ValueError:
+                            print("Please enter a valid number.")
+                else:
+                    print("invalid")
             except ValueError:
-                print("Please enter a valid number.")
+                print("Please enter a valid number")
 def explore_staff():
     print("As you start walking towards the staff only room, you hear a lot of noise")
     print("turn around?")
@@ -414,6 +467,7 @@ def explore_downstairs():
                 command = int(input("> "))
                 if command == 1:
                     FINAL_PART()
+                    break
                 else:
                     print("Invalid choice. Returning to previous options.")
             except ValueError:
@@ -423,7 +477,7 @@ def explore_downstairs():
 def explore_elevator():
     ("this is the bad ending")
 def explore_class():
-    zombie_weights = [0, 0, 0, 0, 0, 0, 1, 0]
+    zombie_weights = [0, 0, 0, 0, 0, 0, 0, 1]
     enemy = random.choices(zombie_stats, weights=zombie_weights, k=1)[0]
     print(f"As you climb up the first floor of the tower block, you encounter a {enemy['name']}!")
     handle_battle(enemy)  # Battle logic moved here
@@ -433,9 +487,9 @@ def explore_class():
             try:
                 command = int(input("> "))
                 if command == 1:
-                    # Continue the game
                     print("You walk into a class")
                     FINAL_PART()
+                    break
                 else:
                     print("Invalid choice. Returning to previous options.")
             except ValueError:
@@ -455,41 +509,63 @@ def second():
                     print("What would you like to do next?")
                     print("1. explore second floor")
                     print("2. go up the third floor")
-                    next_choice = int(input("> "))
-                    if next_choice == 1:
-                        explore_second()
-                    elif next_choice== 2:
-                        explore_third()
-                    else:
-                        print("Invalid choice. Returning to previous options.")
-                        tower_block()
+                    while True:
+                        try:
+                            next_choice = int(input("> "))
+                            if next_choice == 1:
+                                explore_second()
+                                break
+                            elif next_choice== 2:
+                                explore_third()
+                                break
+                            else:
+                                print("Invalid choice. Returning to previous options.")
+               
+                        except ValueError:
+                            print("Please enter a valid number.")
+                else:
+                    print("invalid")
             except ValueError:
-                print("Please enter a valid number.")
+                print("Please enter a valid number")
+
 def explore_second():
+    # Define zombie weights for random choice
     zombie_weights = [0, 0, 1, 0, 0, 0, 0, 0]
     enemy = random.choices(zombie_stats, weights=zombie_weights, k=1)[0]
     print(f"As you climb up the first floor of the tower block, you encounter a {enemy['name']}!")
-    handle_battle(enemy)  # Battle logic moved here
+
+    # Call battle logic
+    handle_battle(enemy)
+    
+    # Check if player is still alive after the battle
     if player_health > 0:
-        rules2()  # Call to show rules2 options
+        rules2()  # Show rules2 after battle
         while True:
             try:
                 command = int(input("> "))
                 if command == 1:
                     # Continue the game
                     print("What would you like to do next?")
-                    print("1. ask a student what to do")
-                    print("2. go up the elevator")
-                    next_choice = int(input("> "))
-                    if next_choice == 1:
-                        student()
-                    elif next_choice== 2:
-                        explore_elevator()
-                    else:
-                        print("Invalid choice. Returning to previous options.")
-                        tower_block()
+                    print("1. Explore the second floor.")
+                    print("2. Go up to the third floor.")
+                    while True:
+                        try:
+                            next_choice = int(input("> "))
+                            if next_choice == 1:
+                                explore_second_floor()  # Placeholder for second floor logic
+                                break
+                            elif next_choice == 2:
+                                explore_third_floor()  # Placeholder for third floor logic
+                                break
+                            else:
+                                print("Invalid choice. Returning to previous options.")
+                         
+                        except ValueError:
+                            print("Please enter a valid number.")  # Handle invalid input
+                else:
+                    print("Invalid choice. Please enter a valid option.")
             except ValueError:
-                print("Please enter a valid number.")
+                print("Please enter a valid number.")  # Handle invalid number input
 def student():
     while True:
         try:
@@ -506,62 +582,80 @@ def student():
                 explore_third()
             else:
                 print("Invalid choice. Returning to previous options.")
-                tower_block()
+
         except ValueError:
             print("Please enter a valid number.")
 
 def libary():
     print("betryal ending")
 def explore_third():
+    # Define zombie weights for random choice
     zombie_weights = [0, 0, 1, 0, 0, 0, 0, 0]
     enemy = random.choices(zombie_stats, weights=zombie_weights, k=1)[0]
     print(f"As you climb up the first floor of the tower block, you encounter a {enemy['name']}!")
-    handle_battle(enemy)  # Battle logic moved here
+
+    # Call battle logic
+    handle_battle(enemy)
+    
+    # Check if player is still alive
     if player_health > 0:
-        rules2()  # Call to show rules2 options
+        show_rules()  # Show rules after battle
         while True:
             try:
                 command = int(input("> "))
                 if command == 1:
-                    # Continue the game
                     print("What would you like to do next?")
-                    print("1. explore tools room")
-                    print("2. go up the elevator")
+                    print("1. Explore the tools room.")
+                    print("2. Go up the elevator.")
                     next_choice = int(input("> "))
                     if next_choice == 1:
-                        explore_tools()
-                    elif next_choice== 2:
-                        explore_elevator()
+                        explore_tools()  # Placeholder for tools room exploration
+                        break
+                    elif next_choice == 2:
+                        explore_elevator()  # Placeholder for elevator exploration
+                        break
                     else:
                         print("Invalid choice. Returning to previous options.")
-                        tower_block()
+           
+                else:
+                    print("Invalid command. Please choose again.")  # Handle invalid main choice
             except ValueError:
-                print("Please enter a valid number.")
+                print("Please enter a valid number.")  # Handle invalid input
 def explore_tools():
+    # Define zombie weights for random choice
     zombie_weights = [0, 0, 0, 1, 0, 0, 0, 0]
     enemy = random.choices(zombie_stats, weights=zombie_weights, k=1)[0]
     print(f"As you climb up the first floor of the tower block, you encounter a {enemy['name']}!")
-    handle_battle(enemy)  # Battle logic moved here
+    handle_battle(enemy)
+
     if player_health > 0:
-        rules2()  # Call to show rules2 options
+        show_rules()  # Show rules after battle
         while True:
             try:
                 command = int(input("> "))
                 if command == 1:
                     # Continue the game
                     print("What would you like to do next?")
-                    print("1. Go to the mysterious room")
-                    print("2. go up to fourth floor")
-                    next_choice = int(input("> "))
-                    if next_choice == 1:
-                        mystery_room()
-                    elif next_choice== 2:
-                        fourth_floor()
-                    else:
-                        print("Invalid choice. Returning to previous options.")
-                        tower_block()
+                    print("1. Go to the mysterious room.")
+                    print("2. Go up to the fourth floor.")
+                    while True:
+                        try:
+                            next_choice = int(input("> "))
+                            if next_choice == 1:
+                                mystery_room()  # Placeholder for mysterious room logic
+                                break
+                            elif next_choice == 2:
+                                fourth_floor()  # Placeholder for fourth floor logic
+                                break
+                            else:
+                                print("Invalid choice. Returning to previous options.")
+                
+                        except ValueError:
+                            print("Please enter a valid number.")  # Handle invalid input
+                else:
+                    print("Invalid command. Please choose again.")  # Handle invalid main choice
             except ValueError:
-                print("Please enter a valid number.")
+                print("Please enter a valid number.")  # Handle invalid input
 def mystery_room():
     zombie_weights = [0, 0, 0, 0, 0, 0, 0, 1]
     enemy = random.choices(zombie_stats, weights=zombie_weights, k=1)[0]
@@ -582,25 +676,32 @@ def fourth_floor():
     zombie_weights = [0, 0, 0, 0, 1, 0, 0, 0]
     enemy = random.choices(zombie_stats, weights=zombie_weights, k=1)[0]
     print(f"As you climb up the first floor of the tower block, you encounter a {enemy['name']}!")
-    handle_battle(enemy)  # Battle logic moved here
+    handle_battle(enemy)
     if player_health > 0:
-        rules2()  # Call to show rules2 options
+        rules2()
         while True:
             try:
                 command = int(input("> "))
                 if command == 1:
-                    # Continue the game
                     print("What would you like to do next?")
                     print("1. Use your key to go inside the loud room")
-                    print("2. go up on top of tower block")
-                    next_choice = int(input("> "))
-                    if next_choice == 1:
-                        weird_ending()
-                    elif next_choice== 2:
-                        top_floor()
-                    else:
-                        print("Invalid choice. Returning to previous options.")
-                        tower_block()
+                    print("2. Go up on top of the tower block")
+                    while True:
+                        try:
+                            next_choice = int(input("> "))
+                            if next_choice == 1:
+                                weird_ending()
+                                break
+                            elif next_choice == 2:
+                                top_floor()
+                                break
+                            else:
+                                print("Invalid choice. Returning to previous options.")
+                  
+                        except ValueError:
+                            print("Please enter a valid number.")
+                else:
+                    print("Invalid command. Please choose again.")
             except ValueError:
                 print("Please enter a valid number.")
 def top_floor():
@@ -626,25 +727,64 @@ def road_explore():
     zombie_weights = [1, 0, 0, 0, 0, 0, 0, 0]
     enemy = random.choices(zombie_stats, weights=zombie_weights, k=1)[0]
     print(f"As you climb up the first floor of the tower block, you encounter a {enemy['name']}!")
-    handle_battle(enemy)  # Battle logic moved here
+    handle_battle(enemy)
     if player_health > 0:
-        rules2()  # Call to show rules2 options
+        rules2()
         while True:
             try:
                 command = int(input("> "))
                 if command == 1:
-                    # Continue the game
                     print("What would you like to do next?")
                     print("1. Continue on the road path")
-                    print("2. go up on top of tower block")
-                    next_choice = int(input("> "))
-                    if next_choice == 1:
-                        continue_road()
-                    elif next_choice== 2:
-                        print("hi")
-                    else:
-                        print("Invalid choice. Returning to previous options.")
-                        tower_block()
+                    print("2. Play some sports in the sports center")
+                    while True:
+                        try:
+                            next_choice = int(input("> "))
+                            if next_choice == 1:
+                                continue_road()
+                                break
+                            elif next_choice == 2:
+                                sports_center()
+                                break
+                            else:
+                                print("Invalid choice. Returning to previous options.")
+                    
+                        except ValueError:
+                            print("Please enter a valid number.")
+                else:
+                    print("Invalid command. Please choose again.")
+            except ValueError:
+                print("Please enter a valid number.")
+def sports_center():
+    zombie_weights = [0, 1, 0, 0, 0, 0, 0, 0]
+    enemy = random.choices(zombie_stats, weights=zombie_weights, k=1)[0]
+    print(f"You go to the sports center but there someone guarding it, You weren't invited {enemy['name']}!")
+    handle_battle(enemy)
+    if player_health > 0:
+        rules2()
+        while True:
+            try:
+                command = int(input("> "))
+                if command == 1:
+                    print("What would you like to do next?")
+                    print("1. Continue on the road path")
+                    print("2. Go up on top of the tower block")
+                    while True:
+                        try:
+                            next_choice = int(input("> "))
+                            if next_choice == 1:
+                                print("hi")
+                                break
+                            elif next_choice == 2:
+                                print("hi")
+                                break
+                            else:
+                                print("Invalid choice. Returning to previous options.")
+                    
+                        except ValueError:
+                            print("Please enter a valid number.")
+                else:
+                    print("Invalid command. Please choose again.")
             except ValueError:
                 print("Please enter a valid number.")
 
@@ -652,79 +792,94 @@ def continue_road():
     zombie_weights = [0, 1, 0, 0, 0, 0, 0, 0]
     enemy = random.choices(zombie_stats, weights=zombie_weights, k=1)[0]
     print(f"As you climb up the first floor of the tower block, you encounter a {enemy['name']}!")
-    handle_battle(enemy)  # Battle logic moved here
+    handle_battle(enemy)
     if player_health > 0:
-        rules2()  # Call to show rules2 options
+        rules2()
         while True:
             try:
                 command = int(input("> "))
                 if command == 1:
-                    # Continue the game
                     print("What would you like to do next?")
                     print("1. Canteen")
                     print("2. Finance office")
-                    next_choice = int(input("> "))
-                    if next_choice == 1:
-                        canteen()
-                    elif next_choice== 2:
-                        office()
-                    else:
-                        print("Invalid choice. Returning to previous options.")
-                        tower_block()
+                    while True:
+                        try:
+                            next_choice = int(input("> "))
+                            if next_choice == 1:
+                                canteen()
+                                break
+                            elif next_choice == 2:
+                                office()
+                                break
+                            else:
+                                print("Invalid choice.")
+                        except ValueError:
+                            print("Please enter a valid number.")
+                else:
+                    print("Invalid command. Please choose again.")
             except ValueError:
                 print("Please enter a valid number.")
-
 def office():
     zombie_weights = [0, 0, 1, 0, 0, 0, 0, 0]
     enemy = random.choices(zombie_stats, weights=zombie_weights, k=1)[0]
     print(f"As you climb up the first floor of the tower block, you encounter a {enemy['name']}!")
-    handle_battle(enemy)  # Battle logic moved here
+    handle_battle(enemy)
     if player_health > 0:
         rules2()  # Call to show rules2 options
         while True:
             try:
                 command = int(input("> "))
                 if command == 1:
-                    # Continue the game
                     print("What would you like to do next?")
                     print("1. Go up the tower block")
                     print("2. Up the elevator")
-                    next_choice = int(input("> "))
-                    if next_choice == 1:
-                        tower_block()
-                    elif next_choice== 2:
-                        explore_elevator()
-                    else:
-                        print("Invalid choice. Returning to previous options.")
-                        tower_block()
+                    while True:
+                        try:
+                            next_choice = int(input("> "))
+                            if next_choice == 1:
+                                tower_block()
+                                break
+                            elif next_choice == 2:
+                                explore_elevator()
+                                break
+                            else:
+                                print("Invalid choice.")
+                        except ValueError:
+                            print("Please enter a valid number.")
+                else:
+                    print("Invalid command. Please choose again.")
             except ValueError:
                 print("Please enter a valid number.")
 def canteen():
     zombie_weights = [0, 0, 0, 1, 0, 0, 0, 0]
     enemy = random.choices(zombie_stats, weights=zombie_weights, k=1)[0]
     print(f"As you climb up the first floor of the tower block, you encounter a {enemy['name']}!")
-    handle_battle(enemy)  # Battle logic moved here
+    handle_battle(enemy)
     if player_health > 0:
         rules2()  # Call to show rules2 options
         while True:
             try:
                 command = int(input("> "))
                 if command == 1:
-                    # Continue the game
                     print("What would you like to do next?")
-                    print("1. eat the food")
-                    print("2. restore the canteen")
-                    next_choice = int(input("> "))
-                    if next_choice == 1:
-                        LOSE_PART()
-                    elif next_choice== 2:
-                        restore_canteen()
-                    else:
-                        print("Invalid choice. Returning to previous options.")
-                        tower_block()
+                    print("1. Eat the food")
+                    print("2. Restore the canteen")
+                    while True:
+                        try:
+                            next_choice = int(input("> "))
+                            if next_choice == 1:
+                                LOSE_PART()
+                                break
+                            elif next_choice == 2:
+                                restore_canteen()
+                                break
+                            else:
+                                print("Invalid choice.")
+                        except ValueError:
+                            print("Please enter a valid number.")
             except ValueError:
-                print("Please enter a valid number.")
-                
+                    print("Please enter a valid number.")
+               
 
 def restore_canteen():
     print("You help them restore the canteen. They thank you by giving you a health potion.")
@@ -772,56 +927,72 @@ def trap():
                 print("Please enter a valid number.")
 def maths_block():
     print("Elvis: Why is this homework so hard?")
-    while True:
+    
+    if player_health > 0:
+        rule2()  # Some kind of intro or rule explanation?
+        
+        while True:
             try:
+                print("\nType 1 to talk to Elvis.")
                 command = int(input("> "))
+                
                 if command == 1:
-                    # Continue the game
-                    print("What would you like to do next?")
+                    print("\nWhat would you like to do next?")
                     print("1. Help Elvis with his homework")
                     print("2. Ask Elvis where to go")
                     next_choice = int(input("> "))
+                    
                     if next_choice == 1:
-                        yes()
-                    elif next_choice== 2:
-                        no()
+                        yes()  # Replace with your actual function
+                        break
+                    elif next_choice == 2:
+                        no()   # Replace with your actual function
+                        break
                     else:
-                        print("Invalid choice. Returning to previous options.")
-                        tower_block()
-            except ValueError:
-                print("Please enter a valid number.")
-def yes():
+                        print("Invalid choice. Returning to main area...")
+                        tower_block()  # Replace with your actual function
+                        break
+                else:
+                    print("Invalid command. Leaving Elvis alone for now.")
+                    break
 
-    print(f"thanks")
-    print("if your looking for mr hunt he's in room 104")
+            except ValueError:
+                print("Please enter a valid number. Ending interaction.")
+                break
+    else:
+        print("You don't have enough health to talk to Elvis...")
+        # You can redirect or end the scene here too
+def yes():
+    print("That was tough, thanks for the help")
     if player_health > 0:
         rules2()  # Call to show rules2 options
         while True:
             try:
+                print("What would you like to do next?")
+                print("1. Walk into the room")
+                print("2. Run")
                 command = int(input("> "))
                 if command == 1:
-                    yes_2()
+                    print("You walk into the room")
+                    yes_2()  # Call the next part of the story or logic
+                    break
+                if command == 2:
+                    print("You try to run, but Mr. Hunt attacks you as you flee and you lose 20 HP. You are forced to fight")
+                    yes_2()  # Call the next part of the story or logic
+                    break
                 else:
-                    print("Invalid choice. Returning to previous options.")
+                    print("Invalid choice. Please choose again.")
             except ValueError:
-                    print("Please enter a valid number.")
-
+                print("Please enter a valid number.")
+                    
 def yes_2():
     zombie_weights = [0, 0, 0, 0, 0, 0, 0, 1]
     enemy = random.choices(zombie_stats, weights=zombie_weights, k=1)[0]
-    print(f"Elvis shows you the way {enemy['name']} comes towards you")
+    print(f"Elvis shows you the way. Suddenly, {enemy['name']} comes towards you!")
 
     if player_health > 0:
-        rules2()  # Call to show rules2 options
-        while True:
-            try:
-                command = int(input("> "))
-                if command == 1:
-                    FINAL_PART()
-                else:
-                    print("Invalid choice. Returning to previous options.")
-            except ValueError:
-                    print("Please enter a valid number.")
+        input("Press Enter to prepare for battle...")
+        FINAL_PART()
 def no():
     zombie_weights = [0, 0, 0, 1, 0, 0, 0, 0]
     enemy = random.choices(zombie_stats, weights=zombie_weights, k=1)[0]
@@ -840,9 +1011,9 @@ def no():
                 print("Please enter a valid number.")
 
 
-                    
+                   
 def LOSE_PART():
-    print("hi")
+    print("lose")
 
 
 
